@@ -11,12 +11,9 @@ pipeline {
         NEXUS_VERSION = "nexus3"
         NEXUS_PROTOCOL = "http"
         NEXUS_URL = "172.31.30.137:8081"
-        NEXUS_VERSION = "admin"
+        NEXUS_USER = "admin"
         SNAP_REPO = "vprofile-snapshot"
         NEXUS_GRP_REPO = "vpro-maven-group"
-    
-            
-
         NEXUS_REPOSITORY = "vprofile-release"
 	NEXUS_REPO_ID    = "vprofile-release"
         NEXUS_CREDENTIAL_ID = "nexuslogin"
