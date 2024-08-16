@@ -5,7 +5,7 @@
 - Maven 3 or later
 - MySQL 5.6 or later
 
-### Used      Technologies :
+### Technologies used in the project :
 - Spring MVC
 - Spring Security
 - Spring Data JPA
