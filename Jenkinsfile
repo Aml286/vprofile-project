@@ -16,6 +16,7 @@ pipeline {
         NEXUS_PROTOCOL = "http"
         NEXUS_URL = "172.31.30.59:8081"
         NEXUS_USER = "admin"
+        NEXUS_PASS = "admin"
         SNAP_REPO = "vprofile-snapshot"
         NEXUS_GRP_REPO = "vpro-maven-group"
         NEXUS_REPOSITORY = "vprofile-release"
