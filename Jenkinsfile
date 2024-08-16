@@ -4,69 +4,69 @@ def COLOR_MAP = [
 ]
 
 pipeline {
-    agent any
-
-    tools {
+    
+	agent any
+	
+	tools {
         maven "MAVEN3"
         jdk "OracleJDK8"
     }
-
+	
     environment {
         NEXUS_VERSION = "nexus3"
         NEXUS_PROTOCOL = "http"
-        NEXUS_URL = "172.31.30.137:8081"
-        NEXUS_USER = "admin"
-        SNAP_REPO = "vprofile-snapshot"
-        NEXUS_GRP_REPO = "vpro-maven-group"
-        NEXUS_REPOSITORY = "vprofile-release"
-        NEXUS_REPO_ID = "vprofile-release"
-        NEXUS_CREDENTIAL_ID = "nexuslogin"
+        NEXUS_URL = "172.31.30.59:8081"
         ARTVERSION = "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}"
-        NEXUS_IP = "172.31.30.137"
+        NEXUS_REPOSITORY = "vprofile-release"
+        NEXUS_CREDENTIAL_ID = "nexuslogin"
+        SNAP_REPO = "vprofile-snapshot"
+        NEXUS_USER = "admin"
+        NEXUS_PASS = "admin"
+        RELEASE_REPO = "vprofile-release"
+        CENTRAL_REPO = "vpro-maven-central"
+        NEXUS_IP = "172.31.30.59"
         NEXUS_PORT = "8081"
+        NEXUS_GRP_REPO = "vpro-maven-group"
+        NEXUS_LOGIN = "nexuslogin"
         SONARSERVER = "sonarserver"
         SONARSCANNER = "sonarscanner"
     }
-
-    stages {
-        stage('BUILD') {
+	
+    stages{
+        
+        stage('Build'){
             steps {
-                sh 'mvn clean install -DskipTests'
+                sh 'mvn -s settings.xml -DskipTests install'
             }
             post {
                 success {
-                    echo 'Now Archiving...'
-                    archiveArtifacts artifacts: '**/target/*.war'
+                    echo "Now Archiving."
+                    archiveArtifacts artifacts: '**/*.war'
                 }
             }
         }
 
-        stage('UNIT TEST') {
+        stage('Test'){
             steps {
                 sh 'mvn -s settings.xml test'
             }
         }
 
-        stage('CODE ANALYSIS WITH CHECKSTYLE') {
+        stage('Checkstyle Analysis'){
             steps {
                 sh 'mvn -s settings.xml checkstyle:checkstyle'
             }
-            post {
-                success {
-                    echo 'Generated Analysis Result'
-                }
-            }
         }
 
-        stage('CODE ANALYSIS with SONARQUBE') {
+        stage('Sonar Analysis') {
             environment {
-                scannerHome = tool 'SONARSCANNER'
+                scannerHome = tool "${SONARSCANNER}"
             }
 
             steps {
-                withSonarQubeEnv('sonarserver') {
+                withSonarQubeEnv("${SONARSERVER}") {
                     sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                        -Dsonar.projectName=vprofile-repo \
+                        -Dsonar.projectName=vprofile \
                         -Dsonar.projectVersion=1.0 \
                         -Dsonar.sources=src/ \
                         -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
@@ -77,7 +77,7 @@ pipeline {
             }
         }
 
-        stage('Sonarqube Quality Gate') {
+        stage('Quality Gate') {
            steps {
               timeout(time: 1, unit: 'HOURS') {
                waitForQualityGate abortPipeline: true
@@ -85,7 +85,7 @@ pipeline {
             }
         }
 
-        stage('Publish to Nexus Repository Manager') {
+        stage('UploadArtifact') {
             steps {
                 nexusArtifactUploader(
                     nexusVersion: "${NEXUS_VERSION}",
@@ -104,8 +104,9 @@ pipeline {
                 )
             }
         }
-    }
 
+    }
+    
     post {
         always {
             echo 'slack notifications'
@@ -117,4 +118,3 @@ pipeline {
         }
     }
 }
-
