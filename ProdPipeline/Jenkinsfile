@@ -4,13 +4,14 @@ def COLOR_MAP = [
 ]
 
 pipeline {
-    
     agent any
 
     environment {
         cluster = 'vprod'
         service = 'vproappprodesvc'
+    }
 
+    stages {
         stage('Deploy to ECS prod') {
             steps {
                 withAWS(credentials: 'awscreds', region: 'us-east-1') {
