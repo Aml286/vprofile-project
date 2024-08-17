@@ -5,13 +5,13 @@ def COLOR_MAP = [
 
 pipeline {
     
-	agent any
-	
-	tools {
+    agent any
+
+    tools {
         maven "MAVEN3"
         jdk "OracleJDK8"
     }
-	
+
     environment {
         NEXUS_VERSION = "nexus3"
         NEXUS_PROTOCOL = "http"
@@ -30,11 +30,14 @@ pipeline {
         NEXUS_LOGIN = "nexuslogin"
         SONARSERVER = "sonarserver"
         SONARSCANNER = "sonarscanner"
+        registryCredential = 'ecr:us-east-1:awscreds'
+        appRegistry = '963046431923.dkr.ecr.us-east-1.amazonaws.com/vprofileappimg'
+        vprofileRegistry = "https://963046431923.dkr.ecr.us-east-1.amazonaws.com"
     }
-	
-    stages{
+
+    stages {
         
-        stage('Build'){
+        stage('Build') {
             steps {
                 sh 'mvn -s settings.xml -DskipTests install'
             }
@@ -46,13 +49,13 @@ pipeline {
             }
         }
 
-        stage('Test'){
+        stage('Test') {
             steps {
                 sh 'mvn -s settings.xml test'
             }
         }
 
-        stage('Checkstyle Analysis'){
+        stage('Checkstyle Analysis') {
             steps {
                 sh 'mvn -s settings.xml checkstyle:checkstyle'
             }
@@ -62,7 +65,6 @@ pipeline {
             environment {
                 scannerHome = tool "${SONARSCANNER}"
             }
-
             steps {
                 withSonarQubeEnv("${SONARSERVER}") {
                     sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
@@ -78,10 +80,10 @@ pipeline {
         }
 
         stage('Quality Gate') {
-           steps {
-              timeout(time: 1, unit: 'HOURS') {
-               waitForQualityGate abortPipeline: true
-              }
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 
@@ -105,6 +107,24 @@ pipeline {
             }
         }
 
+        stage('Build App Image') {
+            steps {
+                script {
+                    dockerImage = docker.build(appRegistry + ":$BUILD_NUMBER", "./Docker-files/app/multistage")
+                }
+            }
+        }
+
+        stage('Upload image to ECR') {
+            steps {
+                script {   
+                    docker.withRegistry(vprofileRegistry, registryCredential) {
+                        dockerImage.push("$BUILD_NUMBER")
+                        dockerImage.push('latest')
+                    }
+                }
+            }
+        }
     }
     
     post {
@@ -118,3 +138,4 @@ pipeline {
         }
     }
 }
+
